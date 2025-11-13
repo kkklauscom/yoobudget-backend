@@ -38,8 +38,26 @@ const userSchema = new mongoose.Schema(
     },
     viewCycle: {
       type: String,
-      enum: ["weekly", "fortnightly", "monthly", "yearly"],
+      enum: ["weekly", "fortnightly", "monthly"],
       default: "monthly",
+    },
+    weekDay: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 6,
+    },
+    fortnightStartDay: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 6,
+    },
+    monthDate: {
+      type: Number,
+      default: null,
+      min: 1,
+      max: 28,
     },
     createdAt: {
       type: Date,
@@ -71,4 +89,3 @@ userSchema.pre("findOneAndUpdate", function (next) {
 });
 
 export default mongoose.model("User", userSchema);
-

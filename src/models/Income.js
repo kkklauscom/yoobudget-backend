@@ -15,35 +15,18 @@ const incomeSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    type: {
+    payCycle: {
       type: String,
-      enum: ["recurring", "one-time"],
+      enum: ["weekly", "biweekly", "monthly", "one-time"],
       required: true,
-    },
-    frequency: {
-      type: String,
-      enum: ["weekly", "fortnightly", "monthly", "yearly", null],
-      default: null,
     },
     nextPayDate: {
       type: Date,
-      required: function () {
-        return this.type === "recurring";
-      },
+      required: true,
     },
-    isFirstPayDay: {
+    isMain: {
       type: Boolean,
       default: false,
-    },
-    lastPayDate: {
-      type: Date,
-      default: null,
-    },
-    oneTimeDate: {
-      type: Date,
-      required: function () {
-        return this.type === "one-time";
-      },
     },
     createdAt: {
       type: Date,
@@ -75,4 +58,3 @@ incomeSchema.pre("findOneAndUpdate", function (next) {
 });
 
 export default mongoose.model("Income", incomeSchema);
-

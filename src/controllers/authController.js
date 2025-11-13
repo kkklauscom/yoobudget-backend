@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { validateViewCycle } from "../utils/viewCycleValidation.js";
 
 // Helper function to format user response (without passwordHash)
 const formatUserResponse = (user) => {
@@ -11,6 +12,9 @@ const formatUserResponse = (user) => {
     budgetRatio: user.budgetRatio,
     currentSavings: user.currentSavings,
     viewCycle: user.viewCycle,
+    weekDay: user.weekDay,
+    fortnightStartDay: user.fortnightStartDay,
+    monthDate: user.monthDate,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -26,7 +30,17 @@ const generateToken = (userId) => {
 // POST /auth/register
 export const register = async (req, res) => {
   try {
-    const { email, password, name, budgetRatio, viewCycle, currentSavings } = req.body;
+    const {
+      email,
+      password,
+      name,
+      budgetRatio,
+      viewCycle,
+      currentSavings,
+      weekDay,
+      fortnightStartDay,
+      monthDate,
+    } = req.body;
 
     // Validate required fields
     if (!email || !password || !name) {
@@ -40,6 +54,21 @@ export const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         error: "Email already exists",
+      });
+    }
+
+    // Validate viewCycle and cycle fields
+    const finalViewCycle = viewCycle || "monthly";
+    const validation = validateViewCycle(
+      finalViewCycle,
+      weekDay,
+      fortnightStartDay,
+      monthDate
+    );
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: validation.error,
       });
     }
 
@@ -57,8 +86,11 @@ export const register = async (req, res) => {
         wants: 30,
         savings: 20,
       },
-      viewCycle: viewCycle || "monthly",
+      viewCycle: finalViewCycle,
       currentSavings: currentSavings !== undefined ? currentSavings : 0,
+      weekDay: validation.cleanedData.weekDay,
+      fortnightStartDay: validation.cleanedData.fortnightStartDay,
+      monthDate: validation.cleanedData.monthDate,
     };
 
     // Create user

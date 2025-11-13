@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { validateViewCycle } from "../utils/viewCycleValidation.js";
 
 // Helper function to format user response (without passwordHash)
 const formatUserResponse = (user) => {
@@ -9,6 +10,9 @@ const formatUserResponse = (user) => {
     budgetRatio: user.budgetRatio,
     currentSavings: user.currentSavings,
     viewCycle: user.viewCycle,
+    weekDay: user.weekDay,
+    fortnightStartDay: user.fortnightStartDay,
+    monthDate: user.monthDate,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -36,9 +40,24 @@ export const getMe = async (req, res) => {
 // PATCH /users/me
 export const updateMe = async (req, res) => {
   try {
-    const { name, budgetRatio, viewCycle } = req.body;
+    const {
+      name,
+      budgetRatio,
+      viewCycle,
+      weekDay,
+      fortnightStartDay,
+      monthDate,
+    } = req.body;
 
-    // Build update object (only allow name, budgetRatio, viewCycle)
+    // Get current user to merge with update data
+    const currentUser = await User.findById(req.userId);
+    if (!currentUser) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    // Build update object
     const updateData = {};
     if (name !== undefined) {
       updateData.name = name;
@@ -46,14 +65,36 @@ export const updateMe = async (req, res) => {
     if (budgetRatio !== undefined) {
       updateData.budgetRatio = budgetRatio;
     }
-    if (viewCycle !== undefined) {
-      if (!["weekly", "fortnightly", "monthly", "yearly"].includes(viewCycle)) {
-        return res.status(400).json({
-          error: "Invalid viewCycle. Must be: weekly, fortnightly, monthly, or yearly",
-        });
-      }
-      updateData.viewCycle = viewCycle;
+
+    // Handle viewCycle and cycle fields
+    const newViewCycle = viewCycle !== undefined ? viewCycle : currentUser.viewCycle;
+    const newWeekDay = weekDay !== undefined ? weekDay : currentUser.weekDay;
+    const newFortnightStartDay =
+      fortnightStartDay !== undefined
+        ? fortnightStartDay
+        : currentUser.fortnightStartDay;
+    const newMonthDate =
+      monthDate !== undefined ? monthDate : currentUser.monthDate;
+
+    // Validate viewCycle and cycle fields
+    const validation = validateViewCycle(
+      newViewCycle,
+      newWeekDay,
+      newFortnightStartDay,
+      newMonthDate
+    );
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: validation.error,
+      });
     }
+
+    // Set viewCycle and cycle fields
+    updateData.viewCycle = newViewCycle;
+    updateData.weekDay = validation.cleanedData.weekDay;
+    updateData.fortnightStartDay = validation.cleanedData.fortnightStartDay;
+    updateData.monthDate = validation.cleanedData.monthDate;
 
     // Update user
     const user = await User.findByIdAndUpdate(
