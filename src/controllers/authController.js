@@ -43,9 +43,6 @@ export const register = async (req, res) => {
       budgetRatio,
       viewCycle,
       currentSavings,
-      weekDay,
-      fortnightStartDay,
-      monthDate,
     } = req.body;
 
     // Validate required fields
@@ -63,26 +60,19 @@ export const register = async (req, res) => {
       });
     }
 
-    // Validate viewCycle and cycle fields
+    // Set default viewCycle and cycle fields
     const finalViewCycle = viewCycle || "monthly";
     
-    // If monthly and no monthDate provided, use default value 1
-    const finalMonthDate = finalViewCycle === "monthly" && (monthDate === null || monthDate === undefined) 
-      ? 1 
-      : monthDate;
+    // For registration, set default cycle fields based on viewCycle
+    // Users can update these later via PATCH /users/me
+    let weekDay = null;
+    let fortnightStartDay = null;
+    let monthDate = null;
     
-    const validation = validateViewCycle(
-      finalViewCycle,
-      weekDay,
-      fortnightStartDay,
-      finalMonthDate
-    );
-
-    if (!validation.isValid) {
-      return res.status(400).json({
-        error: validation.error,
-      });
+    if (finalViewCycle === "monthly") {
+      monthDate = 1; // Default to day 1 of the month
     }
+    // For weekly and fortnightly, leave as null (user must set via update API)
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -100,9 +90,9 @@ export const register = async (req, res) => {
       },
       viewCycle: finalViewCycle,
       currentSavings: currentSavings !== undefined ? currentSavings : 0,
-      weekDay: validation.cleanedData.weekDay,
-      fortnightStartDay: validation.cleanedData.fortnightStartDay,
-      monthDate: validation.cleanedData.monthDate,
+      weekDay,
+      fortnightStartDay,
+      monthDate,
     };
 
     // Create user
