@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import incomeRoutes from "./routes/incomeRoutes.js";
+import expenseRoutes from "./routes/expenseRoutes.js";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/income", incomeRoutes);
+app.use("/api/expense", expenseRoutes);
 
 // Health check route
 app.get("/", (req, res) => {
