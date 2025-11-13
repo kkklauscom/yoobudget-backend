@@ -3,6 +3,12 @@ import { validateViewCycle } from "../utils/viewCycleValidation.js";
 
 // Helper function to format user response (without passwordHash)
 const formatUserResponse = (user) => {
+  // Ensure data consistency: if viewCycle is monthly but monthDate is null, use default 1
+  let finalMonthDate = user.monthDate;
+  if (user.viewCycle === "monthly" && (finalMonthDate === null || finalMonthDate === undefined)) {
+    finalMonthDate = 1;
+  }
+  
   return {
     _id: user._id,
     email: user.email,
@@ -12,7 +18,7 @@ const formatUserResponse = (user) => {
     viewCycle: user.viewCycle,
     weekDay: user.weekDay,
     fortnightStartDay: user.fortnightStartDay,
-    monthDate: user.monthDate,
+    monthDate: finalMonthDate,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
